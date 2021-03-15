@@ -23,6 +23,7 @@ const Software = sequelize.define('Software', {
 			Software.hasMany(models.Comment);
 			Software.hasMany(models.Document);
 			Software.hasMany(models.Barcode);
+			Software.hasMany(models.File);
 			Software.belongsToMany(models.User, { through: 'user_software' });
 			Software.belongsToMany(models.Hardware, { through: 'hardware_software' });
 		},

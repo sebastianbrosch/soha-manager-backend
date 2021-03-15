@@ -8,17 +8,27 @@ import User from '../models/user.js';
 import Barcode from '../models/barcode.js';
 import fs from 'fs';
 import path from 'path';
+import File from '../models/file.js';
 
-const storage = multer.diskStorage({
+const documentStorage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, './uploads/');
+    cb(null, './static/documents/');
   },
   filename: function(req, file, cb) {
-    cb(null, Date.now() + file.originalname);
+    cb(null, Date.now() + file.originalname.toLowerCase());
   }
 });
 
-const fileFilter = (req, file, cb) => {
+const fileStorage = multer.diskStorage({
+	destination: function(req, file, cb) {
+		cb(null, './static/files/');
+	},
+	filename: function(req, file, cb) {
+		cb(null, Date.now() + file.originalname.toLowerCase());
+	}
+});
+
+const documentFilter = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
@@ -26,16 +36,20 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({storage: storage, limits: {
+const fileFilter = (req, file, cb) => {
+	cb(null, true);
+};
+
+const documentUpload = multer({storage: documentStorage, limits: {
   filesize: 1024 * 1024 * 5
+}, fileFilter: documentFilter});
+
+const fileUpload = multer({storage: fileStorage, limits: {
+	filesize: 1024 * 1024 * 5
 }, fileFilter: fileFilter});
 
 // init the router
 const router = express.Router();
-
-
-
-
 
 // get all software items
 router.get('/', (req, res) => {
@@ -151,6 +165,18 @@ router.get('/:softwareId/documents', (req, res) => {
   });
 });
 
+router.get('/:softwareId/files', (req, res) => {
+	Software.findByPk(req.params.softwareId, {include: {model: File}}).then(softwareItem => {
+		softwareItem.getFiles().then(fileItems => {
+			res.status(200).json(fileItems);
+		}).catch(err => {
+			res.status(500).json({error: err});
+		});
+	}).catch(err => {
+		res.status(500).json({error: err});
+	});
+});
+
 router.get('/:id/barcodes', (req, res) => {
 	Software.findByPk(req.params.id, {include: {model: Barcode}}).then(software => {
 		software.getBarcodes().then(barcodes => {
@@ -187,7 +213,7 @@ router.post('/', (req, res) => {
   });
 });
 
-router.post('/:sid/documents', upload.single('document'), (req, res) => {
+router.post('/:sid/documents', documentUpload.single('document'), (req, res) => {
   Software.findByPk(req.params.sid).then(software_item => {
 		console.log(req.file);
     Document.create({
@@ -206,6 +232,24 @@ router.post('/:sid/documents', upload.single('document'), (req, res) => {
   }).catch(err => {
     res.status(500).json({error: err});
   });
+});
+
+router.post('/:softwareId/files', fileUpload.single('file'), (req, res) => {
+	Software.findByPk(req.params.softwareId).then(softwareItem => {
+		File.create({
+			description: req.body.description,
+			filename: req.file.originalname,
+			mime: req.file.mimetype,
+			static_filename: req.file.filename,
+			SoftwareId: softwareItem.id
+		}).then(fileItem => {
+			res.status(200).json(fileItem);
+		}).catch(err => {
+			res.status(500).json({error: err});
+		});
+	}).catch(err => {
+		res.status(500).json({error: err});
+	});
 });
 
 router.post('/:sid/barcodes', (req, res) => {
@@ -287,8 +331,20 @@ router.delete('/:sid/documents/:did', async (req, res) => {
 	const staticFilename = documentItem.static_file;
 
 	await Document.destroy({ where: {	id: req.params.did }}).then((documentItem) => {
-		fs.unlinkSync(path.resolve() + '/uploads/' + staticFilename);
+		fs.unlinkSync(path.resolve() + '/static/documents/' + staticFilename);
 		res.status(200).json({deleted: req.params.did});
+	}).catch(err => {
+		res.status(500).json({error: err});
+	});
+});
+
+router.delete('/:softwareId/files/:fileId', async (req, res) => {
+	const fileItem = await File.findByPk(req.params.fileId);
+	const static_filename = fileItem.static_filename;
+
+	await File.destroy({ where: { id: req.params.fileId }}).then(fileItem => {
+		fs.unlinkSync(path.resolve() + '/static/files/' + static_filename);
+		res.status(200).json({deleted: req.params.fileId});
 	}).catch(err => {
 		res.status(500).json({error: err});
 	});

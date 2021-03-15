@@ -1,5 +1,5 @@
 /.vscode
-/uploads
+/static
 /node_modules
 /certs
 /package-lock.json

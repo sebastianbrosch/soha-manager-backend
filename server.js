@@ -28,10 +28,24 @@ const corsOptions = {
     optionsSuccessStatus: 200
 };
 
+if (!fs.existsSync('./static')) {
+	fs.mkdirSync('./static');
+}
+
+
+if (!fs.existsSync('./static/files')){
+	fs.mkdirSync('./static/files');
+}
+
+if (!fs.existsSync('./static/documents')){
+	fs.mkdirSync('./static/documents');
+}
+
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.use('/static', express.static(path.join(path.resolve(), 'uploads')))
+app.use('/static/documents', express.static(path.join(path.resolve(), 'static/documents')));
+app.use('/static/files', express.static(path.join(path.resolve(), 'static/files')));
 
 app.use('/', authRoutes);
 app.use('/users', usersRoutes);
