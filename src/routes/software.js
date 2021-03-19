@@ -51,7 +51,22 @@ const fileUpload = multer({storage: fileStorage, limits: {
 // init the router
 const router = express.Router();
 
-// get all software items
+
+/**
+ * @swagger
+ * /software:
+ *   get:
+ *     description: Returns all Software of the Software and Hardware Management.
+ *     responses:
+ *       '200':
+ *         description: A list of all Software items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Software"
+ */
 router.get('/', (req, res) => {
   Software.findAll().then(software_items => {
     res.status(200).json(software_items);

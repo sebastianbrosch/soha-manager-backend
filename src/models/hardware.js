@@ -1,22 +1,60 @@
 import DataTypes from 'sequelize';
 import sequelize from '../sequelize.js';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Hardware:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *         producer:
+ *           type: string
+ *         serial_number:
+ *           type: string
+ *         type:
+ *           type: string
+ *         purchase_date:
+ *           type: string
+ *           format: date-time
+ *         warranty_date:
+ *           type: string
+ *           format: date-time
+ *         state:
+ *           type: string
+ *         offline_archive:
+ *           type: integer
+ *           format: int32
+ */
 const Hardware = sequelize.define('Hardware', {
   name: {
 		type: DataTypes.STRING
 	},
-  serialnumber: {
+	producer: {
 		type: DataTypes.STRING
 	},
-	devicetype: {
+	serial_number: {
 		type: DataTypes.STRING
 	},
-	offlinefolder: {
-		type: DataTypes.INTEGER
+	type: {
+		type: DataTypes.STRING
+	},
+	purchase_date: {
+		type: DataTypes.DATE
+	},
+	warranty_date: {
+		type: DataTypes.DATE
 	},
 	state: {
-  	type: DataTypes.ENUM(['active', 'inactive'])
+		type: DataTypes.ENUM(['active', 'inactive', 'spare'])
 	},
+	offline_archive: {
+		type: DataTypes.INTEGER
+	}
 }, {
 	classMethods: {
 		associate: (models) => {

@@ -55,10 +55,53 @@ const fileUpload = multer({storage: fileStorage, limits: {
 // init the router
 const router = express.Router();
 
-// get all hardware items
+/**
+ * @swagger
+ * /hardware:
+ *   get:
+ *     description: Returns all Hardware of the Software and Hardware Management.
+ *     responses:
+ *       '200':
+ *         description: A list of all Hardware items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Hardware"
+ */
 router.get('/', (req, res) => {
   Hardware.findAll().then(hardware_items => {
     res.status(200).json(hardware_items);
+  }).catch(err => {
+    res.status(500).json({error: err});
+  });
+});
+
+/**
+ * @swagger
+ * /hardware/{hardwareId}:
+ *   get:
+ *     description: Returns Hardware based on ID.
+ *     responses:
+ *       '200':
+ *         description: The Hardware
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Hardware"
+ *   parameters:
+ *   - name: hardwareId
+ *     in: path
+ *     description: ID of the Hardware.
+ *     required: true
+ *     style: simple
+ */
+router.get('/:id', (req, res) => {
+  Hardware.findByPk(req.params.id).then(hardware_item => {
+    res.status(200).json(hardware_item);
   }).catch(err => {
     res.status(500).json({error: err});
   });
@@ -97,14 +140,7 @@ router.post('/barcodes', async (req, res) => {
 	});
 });
 
-// get a specific hardware item
-router.get('/:id', (req, res) => {
-  Hardware.findByPk(req.params.id).then(hardware_item => {
-    res.status(200).json(hardware_item);
-  }).catch(err => {
-    res.status(500).json({error: err});
-  });
-});
+
 
 router.get('/:id/comments', (req, res) => {
   Hardware.findByPk(req.params.id, {include: {model: Comment}}).then(hardware_item => {

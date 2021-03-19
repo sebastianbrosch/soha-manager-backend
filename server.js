@@ -75,7 +75,10 @@ const optionsSwagger = {
       version: '1.0.0',
     },
   },
-  apis: ["./src/routes/*.js"],
+  apis: [
+		"./src/routes/*.js",
+		"./src/models/*.js"
+	],
 };
 
 const specs = await swaggerJsdoc(optionsSwagger);
