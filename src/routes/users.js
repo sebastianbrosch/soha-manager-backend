@@ -24,6 +24,22 @@ router.get('/', (req, res) => {
     });
 });
 
+router.get('/hardware', async (req, res) => {
+  await User.findAll({include: {model: Hardware}}).then(user_items => {
+    res.status(200).json(user_items);
+  }).catch(err => {
+    res.status(500).json({error: err});
+  });
+});
+
+router.get('/software', async (req, res) => {
+	await User.findAll({include: {model: Software}}).then(user_items => {
+		res.status(200).json(user_items);
+	}).catch(err => {
+		res.status(500).json({error: err});
+	})
+});
+
 router.get('/:uid/hardware', (req, res) => {
 	User.findByPk(req.params.uid, {include: {model: Hardware}}).then(userItem => {
 		userItem.getHardware().then((hardwareItems) => {
