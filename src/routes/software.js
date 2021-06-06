@@ -56,9 +56,11 @@ const router = express.Router();
  * @swagger
  * /software:
  *   get:
- *     description: Returns all Software of the Software and Hardware Management.
+ *     description: Returns all Software items.
+ *     tags:
+ *       - Software
  *     responses:
- *       '200':
+ *       200:
  *         description: A list of all Software items.
  *         content:
  *           application/json:
@@ -66,171 +68,428 @@ const router = express.Router();
  *               type: array
  *               items:
  *                 $ref: "#/components/schemas/Software"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  */
 router.get('/', (req, res) => {
-  Software.findAll().then(software_items => {
-    res.status(200).json(software_items);
-  }).catch(err => {
-    res.status(500).json({error: err});
-  });
-});
-
-router.get('/hardware', (req, res) => {
-  Software.findAll({include: {model: Hardware}}).then(software_items => {
-    res.status(200).json(software_items);
-  }).catch(err => {
-    res.status(500).json({error: err});
+	Software.findAll().then(software_items => {
+		res.status(200).json(software_items);
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
 /**
- * @openapi
- * /software/users:
+ * @swagger
+ * /software/{SoftwareId}:
  *   get:
- *     description: Welcome to swagger-jsdoc!
+ *     description: Returns the Software item with given ID.
+ *     tags:
+ *       - Software
  *     responses:
  *       200:
- *         description: Returns a mysterious string.
+ *         description: The found Software item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Software"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
  */
-router.get('/users', (req, res) => {
-	console.log('software with users get');
-  Software.findAll({include: {model: User}}).then(software_items => {
-    res.status(200).json(software_items);
-  }).catch(err => {
-    res.status(500).json({error: err});
+router.get('/:SoftwareId', (req, res) => {
+  Software.findByPk(req.params.SoftwareId).then(software_item => {
+    res.status(200).json(software_item);
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
-router.post('/barcodes', async (req, res) => {
-	await Barcode.findAll({
-		where: {
-			format: req.body.format,
-			code: req.body.code
-		},
-		include: {
-			model: Software,
-		}
-	}).then(barcodeItems => {
-		let arrSoftwareItems = [];
-
-		barcodeItems.forEach((barcodeItem) => {
-			if (barcodeItem.Software) {
-				arrSoftwareItems.push(barcodeItem.Software);
-			}
+/**
+ * @swagger
+ * /software/{SoftwareId}/barcodes:
+ *   get:
+ *     description: Returns all the Barcode items of the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A list of all Barcode items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Barcode"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.get('/:SoftwareId/barcodes', (req, res) => {
+	Software.findByPk(req.params.SoftwareId, {include: {model: Barcode}}).then(software_item => {
+		software_item.getBarcodes({attributes: {exclude: ['HardwareId']}}).then(barcode_items => {
+			res.status(200).json(barcode_items);
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-
-		res.status(200).json(arrSoftwareItems);
-	}).catch(err => {
-		console.log(err);
-		res.status(500).json({error: err});
+	}).catch(err_message => {
+		res.status(500).json({
+			message: err_message
+		});
 	});
 });
 
 /**
- * @openapi
- * /software/{softwareId}/comments:
- *   get:
- *     description: Get all comments of a software.
- *     produces:
- *       - application/json
+ * @swagger
+ * /software/{SoftwareId}/barcodes:
+ *   post:
+ *     description: Create a new Barcode item for the Software item.
+ *     tags:
+ *       - Software
  *     responses:
  *       200:
- *         description: Returns all comments of the software.
- *     parameters:
- *       - name: softwareId
- *         in: path
- *         required: true
+ *         description: The Barcode item added to the Software item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Barcode"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
  */
-router.get('/:softwareId/comments', (req, res) => {
-  Software.findByPk(req.params.softwareId, {include: {model: Comment}}).then(software_item => {
-    software_item.getComments({include: {model: User}}).then(comment_items => {
-      res.status(200).json(comment_items);
-    }).catch(err => {
-      res.status(500).json({error: err});
-    });
-  }).catch(err => {
-    res.status(500).json({error: err});
+router.post('/:SoftwareId/barcodes', (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
+		Barcode.create({
+			format: req.body.format,
+			code: req.body.barcode,
+			SoftwareId: software_item.id
+		}).then(barcode_item => {
+			res.status(200).json(barcode_item);
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(err_message => {
+		res.status(500).json({
+			message: err_message
+		});
+	});
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/barcodes/{BarcodeId}:
+ *   delete:
+ *     description: Delete a Barcode item of the Software item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the status information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Info"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ *     - name: BarcodeId
+ *       in: path
+ *       description: ID of the Barcode item.
+ *       required: true
+ */
+router.delete('/:SoftwareId/barcodes/:BarcodeId', (req, res) => {
+  Barcode.destroy({where: {id: req.params.BarcodeId}}).then((barcode_item) => {
+		console.log(barcode_item);
+    res.status(200).json({
+			action: 'deleted',
+			item_id: req.params.BarcodeId
+		});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
 /**
- * @openapi
- * /software/{softwareId}/documents:
+ * @swagger
+ * /software/{SoftwareId}/comments:
  *   get:
- *     description: Get all documents of a software.
- *     produces:
- *       - application/json
+ *     description: Returns all the Comment items of the Software item with given ID.
+ *     tags:
+ *       - Software
  *     responses:
  *       200:
- *         description: Returns all documents of the software.
- *     parameters:
- *       - name: softwareId
- *         in: path
- *         required: true
+ *         description: A list of all Comment items with User information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Comment"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
  */
-router.get('/:softwareId/documents', (req, res) => {
-  Software.findByPk(req.params.softwareId, {include: {model: Document}}).then(software_item => {
+router.get('/:SoftwareId/comments', (req, res) => {
+  Software.findByPk(req.params.SoftwareId, {include: {model: Comment}}).then(software_item => {
+    software_item.getComments({include: {model: User}, attributes: {exclude: ['SoftwareId', 'HardwareId', 'UserId']}}).then(comment_items => {
+      res.status(200).json(comment_items);
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
+    });
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
+  });
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/comments:
+ *   post:
+ *     description: Create a new Comment item for the Software item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: The Comment item added to the Software item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Comment"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.post('/:SoftwareId/comments', (req, res) => {
+  Software.findByPk(req.params.SoftwareId).then(software_item => {
+    Comment.create({
+      content: req.body.content,
+      SoftwareId: software_item.id,
+			UserId: req.body.userId,
+    }).then(comment_item => {
+      res.status(200).json(comment_item);
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
+    });
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Software not found!'
+		});
+  });
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/comments/{CommentId}:
+ *   delete:
+ *     description: Delete a Comment item of the Hardware item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the status information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ *     - name: CommentId
+ *       in: path
+ *       description: ID of the Comment item.
+ *       required: true
+ */
+router.delete('/:SoftwareId/comments/:CommentId', (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
+		Comment.destroy({where: {id: req.params.CommentId, SoftwareId: software_item.id}}).then(() => {
+			res.status(200).json({
+				action: 'deleted',
+				item_id: req.params.CommentId
+			});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
+	});
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/documents:
+ *   get:
+ *     description: Returns all the Document items of the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A list of all Document items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Document"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.get('/:SoftwareId/documents', (req, res) => {
+  Software.findByPk(req.params.SoftwareId, {include: {model: Document}}).then(software_item => {
     software_item.getDocuments().then(document_items => {
       res.status(200).json(document_items);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
-  });
-});
-
-router.get('/:softwareId/files', (req, res) => {
-	Software.findByPk(req.params.softwareId, {include: {model: File}}).then(softwareItem => {
-		softwareItem.getFiles().then(fileItems => {
-			res.status(200).json(fileItems);
-		}).catch(err => {
-			res.status(500).json({error: err});
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Software not found!'
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
-	});
-});
-
-router.get('/:id/barcodes', (req, res) => {
-	Software.findByPk(req.params.id, {include: {model: Barcode}}).then(software => {
-		software.getBarcodes().then(barcodes => {
-			res.status(200).json(barcodes);
-		}).catch(err => {
-			res.status(500).json({error: err});
-		});
-	}).catch(err => {
-		res.status(500).json({error: err});
-	});
-});
-
-// get a specific software item
-router.get('/:id', (req, res) => {
-  Software.findByPk(req.params.id).then(software_item => {
-    res.status(200).json(software_item);
-  }).catch(err => {
-    res.status(500).json({error: err});
   });
 });
 
-// create a new software item
-router.post('/', (req, res) => {
-  Software.create({
-    name: req.body.name,
-    units: req.body.units,
-    offlinefolder: req.body.offlinefolder,
-    license: req.body.license,
-    state: req.body.state
-  }).then(software_item => {
-    res.status(200).json(software_item);
-  }).catch(err => {
-    res.status(500).json({error: err});
-  });
-});
-
-router.post('/:sid/documents', documentUpload.single('document'), (req, res) => {
-  Software.findByPk(req.params.sid).then(software_item => {
-		console.log(req.file);
+/**
+ * @swagger
+ * /software/{SoftwareId}/documents:
+ *   post:
+ *     description: Create a new Document item for the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: The Document item added to the Software item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Document"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.post('/:SoftwareId/documents', documentUpload.single('document'), (req, res) => {
+  Software.findByPk(req.params.SoftwareId).then(software_item => {
     Document.create({
       description: req.body.description,
       documenttype: req.body.documenttype,
@@ -239,130 +498,519 @@ router.post('/:sid/documents', documentUpload.single('document'), (req, res) => 
 			mime: req.file.mimetype,
       SoftwareId: software_item.id
     }).then(document_item => {
-
       res.status(200).json(document_item);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Software not found!'
+		});
   });
 });
 
-router.post('/:softwareId/files', fileUpload.single('file'), (req, res) => {
-	Software.findByPk(req.params.softwareId).then(softwareItem => {
+/**
+ * @swagger
+ * /software&{SoftwareId}/documents/{DocumentId}:
+ *   delete:
+ *     description: Delete a Document item of the Software item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the status information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Document"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ *     - name: DocumentId
+ *       in: path
+ *       description: ID of the Document item.
+ *       required: true
+ */
+router.delete('/:SoftwareId/documents/:DocumentId', (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
+		Document.destroy({where: {id: req.params.DocumentId, SoftwareId: software_item.id}}).then(document_item => {
+			fs.unlinkSync(path.resolve() + '/static/documents/' + document_item.static_file);
+			res.status(200).json({
+				action: 'deleted',
+				item_id: document_item.id
+			});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
+	});
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/files:
+ *   get:
+ *     description: Returns all the File items of the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A list of all File items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/File"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.get('/:SoftwareId/files', (req, res) => {
+	Software.findByPk(req.params.SoftwareId, {include: {model: File}}).then(software_item => {
+		software_item.getFiles().then(file_items => {
+			res.status(200).json(file_items);
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
+	});
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/files:
+ *   post:
+ *     description: Create a new File item for the Software item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the created File item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/File"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.post('/:SoftwareId/files', fileUpload.single('file'), (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
 		File.create({
 			description: req.body.description,
 			filename: req.file.originalname,
 			mime: req.file.mimetype,
 			static_filename: req.file.filename,
-			SoftwareId: softwareItem.id
-		}).then(fileItem => {
-			res.status(200).json(fileItem);
-		}).catch(err => {
-			res.status(500).json({error: err});
+			SoftwareId: software_item.id
+		}).then(file_item => {
+			res.status(200).json(file_item);
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
 	});
 });
 
-router.post('/:sid/barcodes', (req, res) => {
-	Software.findByPk(req.params.sid).then(softwareItem => {
-		Barcode.create({
-			format: req.body.format,
-			code: req.body.barcode,
-			SoftwareId: softwareItem.id
-		}).then(barcodeItem => {
-			res.status(200).json(barcodeItem);
-		}).catch(err => {
-			res.status(500).json({error: err});
+/**
+ * @swagger
+ * /software/{SoftwareId}/files/{FileId}:
+ *   delete:
+ *     description: Delete a File item of the Software item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the status information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ *     - name: FileId
+ *       in: path
+ *       description: ID of the File item.
+ *       required: true
+ */
+router.delete('/:SoftwareId/files/:FileId', (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
+		File.destroy({where: {id: req.params.FileId, SoftwareId: software_item.id}}).then(file_item => {
+			fs.unlinkSync(path.resolve() + '/static/files/' + file_item.static_filename);
+			res.status(200).json({
+				action: 'deleted',
+				item_id: file_item.id
+			});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
 	});
 });
 
-router.post('/:sid/comments', (req, res) => {
-  Software.findByPk(req.params.sid).then(software_item => {
-    Comment.create({
-      content: req.body.content,
-      SoftwareId: software_item.id,
-			UserId: req.body.userId,
-    }).then(comment_item => {
-      res.status(200).json(comment_item);
-    }).catch(err => {
-      res.status(500).json({error: err});
-    });
-  }).catch(err => {
-    res.status(500).json({error: err});
-  })
+/**
+ * @swagger
+ * /software/{SoftwareId}/hardware:
+ *   get:
+ *     description: Returns all the Hardware items of the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A list of all Hardware items.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: "#/components/schemas/Hardware"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.get('/:SoftwareId/hardware', (req, res) => {
+  Software.findByPk(req.params.SoftwareId, {include: {model: Hardware}}).then(software_item => {
+		software_item.getHardware().then(hardware_items => {
+			res.status(200).json(hardware_items);
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
+	});
 });
 
-// update the software item
-router.put('/:id', (req, res) => {
+/**
+ * @swagger
+ * /software/{SoftwareId}/hardware/{HardwareId}:
+ *   delete:
+ *     description: Remove the assignment between Software and Hardware.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the status information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ *     - name: HardwareId
+ *       in: path
+ *       description: ID of the Hardware item.
+ *       required: true
+ */
+router.delete('/:SoftwareId/hardware/:HardwareId', (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
+		software_item.removeHardware(req.params.HardwareId).then(() => {
+			res.status(200).json({
+				action: 'rejected',
+				item_id: req.params.HardwareId
+			});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
+	});
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}/hardware/{HardwareId}:
+ *   put:
+ *     description: Add the assignment between Software and Hardware.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with information of the assignment.
+ *         content:
+ *           application/json:
+ *             schema:
+ *                $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ *     - name: HardwareId
+ *       in: path
+ *       description: ID of the Hardware item.
+ *       required: true
+ */
+router.put('/:SoftwareId/hardware/:HardwareId', (req, res) => {
+	Software.findByPk(req.params.SoftwareId).then(software_item => {
+		software_item.addHardware(req.params.HardwareId).then(() => {
+			res.status(200).json({
+				action: 'assigned',
+				item_id: req.params.HardwareId
+			});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Software not found!'
+		});
+	});
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}:
+ *   delete:
+ *     description: Delete the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with information of the deletion.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Info"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.delete('/:SoftwareId', (req, res) => {
+  Software.destroy({where: {id: req.params.SoftwareId}}).then(software_item => {
+    res.status(200).json({
+			action: 'deleted',
+			item_id: software_item.id
+		});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
+  });
+});
+
+/**
+ * @swagger
+ * /software/{SoftwareId}:
+ *   put:
+ *     description: Update the Software item with given ID.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: A object with the updated Software item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Software"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ *   parameters:
+ *     - name: SoftwareId
+ *       in: path
+ *       description: ID of the Software item.
+ *       required: true
+ */
+router.put('/:SoftwareId', (req, res) => {
   Software.update({
-    name: req.body.name,
-    units: req.body.units,
-    license: req.body.license,
-    offlinefolder: req.body.offlinefolder,
-    state: req.body.state
+		name: req.body.name,
+		producer: req.body.producer,
+		licenseId: req.body.licenseId,
+		licenseKey: req.body.licenseKey,
+		numberLicense: req.body.numberLicense,
+		state: req.body.state,
+		expiryDate: req.body.expiryDate,
+		offlineArchive: req.body.offlineArchive
   }, {
-    where: { id: req.params.id }
-  }).then(() => {
-    res.status(200).json({updated: req.params.id});
-  }).catch(err => {
-    res.status(500).json({error: err});
+    where: {id: req.params.SoftwareId}
+  }).then(software_item => {
+    res.status(200).json(software_item);
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
-// delete the software item
-router.delete('/:id', (req, res) => {
-  Software.destroy({
-    where: {
-      id: req.params.id
-    }
-  }).then(() => {
-    res.status(200).json({deleted: req.params.id});
-  }).catch(err => {
-    res.status(500).json({error: err});
+/**
+ * @swagger
+ * /software
+ *   post:
+ *     description: Create a new Software item.
+ *     tags:
+ *       - Software
+ *     responses:
+ *       200:
+ *         description: The successfully created Software item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Software"
+ *       500:
+ *         description: A unexpected error on the API.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
+ */
+router.post('/', (req, res) => {
+  Software.create({
+		name: req.body.name,
+		producer: req.body.producer,
+		licenseId: req.body.licenseId,
+		licenseKey: req.body.licenseKey,
+		numberLicense: req.body.numberLicense,
+		state: req.body.state,
+		expiryDate: req.body.expiryDate,
+		offlineArchive: req.body.offlineArchive
+  }).then(software_item => {
+    res.status(200).json(software_item);
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
-});
-
-router.delete('/:sid/barcodes/:bid', (req, res) => {
-  Barcode.destroy({
-    where: {
-      id: req.params.bid
-    }
-  }).then(() => {
-    res.status(200).json({deleted: req.params.bid});
-  }).catch(err => {
-    res.status(500).json({error: err});
-  });
-});
-
-router.delete('/:sid/documents/:did', async (req, res) => {
-	const documentItem = await Document.findByPk(req.params.did);
-	const staticFilename = documentItem.static_file;
-
-	await Document.destroy({ where: {	id: req.params.did }}).then((documentItem) => {
-		fs.unlinkSync(path.resolve() + '/static/documents/' + staticFilename);
-		res.status(200).json({deleted: req.params.did});
-	}).catch(err => {
-		res.status(500).json({error: err});
-	});
-});
-
-router.delete('/:softwareId/files/:fileId', async (req, res) => {
-	const fileItem = await File.findByPk(req.params.fileId);
-	const static_filename = fileItem.static_filename;
-
-	await File.destroy({ where: { id: req.params.fileId }}).then(fileItem => {
-		fs.unlinkSync(path.resolve() + '/static/files/' + static_filename);
-		res.status(200).json({deleted: req.params.fileId});
-	}).catch(err => {
-		res.status(500).json({error: err});
-	});
 });
 
 export default router;

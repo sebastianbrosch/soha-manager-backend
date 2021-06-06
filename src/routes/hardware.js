@@ -76,13 +76,15 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  */
 router.get('/', (req, res) => {
   Hardware.findAll().then(hardware_items => {
     res.status(200).json(hardware_items);
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
@@ -99,15 +101,13 @@ router.get('/', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               items:
- *                 $ref: "#/components/schemas/Hardware"
+ *               $ref: "#/components/schemas/Hardware"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -117,8 +117,10 @@ router.get('/', (req, res) => {
 router.get('/:HardwareId', (req, res) => {
   Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
     res.status(200).json(hardware_item);
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
@@ -143,7 +145,7 @@ router.get('/:HardwareId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -152,15 +154,17 @@ router.get('/:HardwareId', (req, res) => {
  */
 router.get('/:HardwareId/barcodes', (req, res) => {
 	Hardware.findByPk(req.params.HardwareId, {include: {model: Barcode}}).then(hardware_item => {
-		hardware_item.getBarcodes().then(barcodes => {
-			res.status(200).json(barcodes);
-		}).catch(err => {
-			console.log(err);
-			res.status(500).json({error: err});
+		hardware_item.getBarcodes({attributes: {exclude: ['SoftwareId']}}).then(barcode_items => {
+			res.status(200).json(barcode_items);
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		console.log(err);
-		res.status(500).json({error: err});
+	}).catch(err_message => {
+		res.status(500).json({
+			message: err_message
+		});
 	});
 });
 
@@ -177,15 +181,13 @@ router.get('/:HardwareId/barcodes', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               items:
- *                 $ref: "#/components/schemas/Barcode"
+ *               $ref: "#/components/schemas/Barcode"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -200,11 +202,15 @@ router.post('/:HardwareId/barcodes', (req, res) => {
 			HardwareId: hardware_item.id
 		}).then(barcode_item => {
 			res.status(200).json(barcode_item);
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(err_message => {
+		res.status(500).json({
+			message: err_message
+		});
 	});
 });
 
@@ -221,13 +227,13 @@ router.post('/:HardwareId/barcodes', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Info"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -239,10 +245,15 @@ router.post('/:HardwareId/barcodes', (req, res) => {
  *       required: true
  */
 router.delete('/:HardwareId/barcodes/:BarcodeId', (req, res) => {
-  Barcode.destroy({ where: { id: req.params.BarcodeId }}).then(() => {
-    res.status(200).json({deleted: req.params.BarcodeId});
-  }).catch(err => {
-    res.status(500).json({error: err});
+  Barcode.destroy({where: {id: req.params.BarcodeId}}).then(() => {
+    res.status(200).json({
+			action: 'deleted',
+			item_id: req.params.BarcodeId
+		});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
@@ -267,7 +278,7 @@ router.delete('/:HardwareId/barcodes/:BarcodeId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -278,11 +289,15 @@ router.delete('/:HardwareId/barcodes/:BarcodeId', (req, res) => {
   Hardware.findByPk(req.params.HardwareId, {include: {model: Comment}}).then(hardware_item => {
     hardware_item.getComments({include: {model: User}, attributes: {exclude: ['SoftwareId', 'HardwareId', 'UserId']}}).then(comment_items => {
       res.status(200).json(comment_items);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
@@ -299,15 +314,19 @@ router.delete('/:HardwareId/barcodes/:BarcodeId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               items:
- *                 $ref: "#/components/schemas/Comment"
+ *               $ref: "#/components/schemas/Comment"
+ *       404:
+ *         description: Error if Hardware item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -322,11 +341,15 @@ router.post('/:HardwareId/comments', (req, res) => {
 			UserId: req.body.userId,
     }).then(comment_item => {
       res.status(200).json(comment_item);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Hardware not found!'
+		});
   });
 });
 
@@ -343,13 +366,19 @@ router.post('/:HardwareId/comments', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Hardware item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -362,21 +391,20 @@ router.post('/:HardwareId/comments', (req, res) => {
  */
 router.delete('/:HardwareId/comments/:CommentId', (req, res) => {
 	Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
-		Comment.findByPk(req.params.CommentId).then(comment_item => {
-			Comment.destroy({ where: {	id: comment_item.id }}).then(() => {
-				res.status(200).json({
-					action: 'deleted',
-					HardwareId: hardware_item.id,
-					CommentId: comment_item.id
-				});
-			}).catch(err => {
-				res.status(500).json({error: err});
+		Comment.destroy({where: {id: req.params.CommentId, HardwareId: hardware_item.id}}).then(() => {
+			res.status(200).json({
+				action: 'deleted',
+				item_id: req.params.CommentId
 			});
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
+		});
 	});
 });
 
@@ -396,12 +424,18 @@ router.delete('/:HardwareId/comments/:CommentId', (req, res) => {
  *               type: array
  *               items:
  *                 $ref: "#/components/schemas/Document"
+ *       404:
+ *         description: Error if Hardware item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -412,11 +446,15 @@ router.get('/:HardwareId/documents', (req, res) => {
   Hardware.findByPk(req.params.HardwareId, {include: {model: Document}}).then(hardware_item => {
     hardware_item.getDocuments().then(document_items => {
       res.status(200).json(document_items);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Hardware not found!'
+		});
   });
 });
 
@@ -424,7 +462,7 @@ router.get('/:HardwareId/documents', (req, res) => {
  * @swagger
  * /hardware/{HardwareId}/documents:
  *   post:
- *     description: Create a new Document item for the Hardware item.
+ *     description: Create a new Document item for the Hardware item with given ID.
  *     tags:
  *       - Hardware
  *     responses:
@@ -433,15 +471,19 @@ router.get('/:HardwareId/documents', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               items:
- *                 $ref: "#/components/schemas/Document"
+ *               $ref: "#/components/schemas/Document"
+ *       404:
+ *         description: Error if Hardware item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -459,11 +501,15 @@ router.post('/:HardwareId/documents', documentUpload.single('document'), (req, r
       HardwareId: hardware_item.id
     }).then(document_item => {
       res.status(200).json(document_item);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Hardware not found!'
+		});
   });
 });
 
@@ -480,13 +526,19 @@ router.post('/:HardwareId/documents', documentUpload.single('document'), (req, r
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Document"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -499,18 +551,21 @@ router.post('/:HardwareId/documents', documentUpload.single('document'), (req, r
  */
 router.delete('/:HardwareId/documents/:DocumentId', (req, res) => {
 	Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
-		Document.findByPk(req.params.DocumentId).then(document_item => {
-			Document.destroy({ where: {	id: document_item.id, HardwareId: hardware_item.id }}).then(() => {
-				fs.unlinkSync(path.resolve() + '/static/documents/' + document_item.static_file);
-				res.status(200).json({deleted: document_item.id});
-			}).catch(err => {
-				res.status(500).json({error: err});
+		Document.destroy({where: {id: req.params.DocumentId, HardwareId: hardware_item.id}}).then(document_item => {
+			fs.unlinkSync(path.resolve() + '/static/documents/' + document_item.static_file);
+			res.status(200).json({
+				action: 'deleted',
+				item_id: document_item.id
 			});
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
+		});
 	});
 });
 
@@ -530,12 +585,18 @@ router.delete('/:HardwareId/documents/:DocumentId', (req, res) => {
  *               type: array
  *               items:
  *                 $ref: "#/components/schemas/File"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -546,11 +607,15 @@ router.get('/:HardwareId/files', (req, res) => {
 	Hardware.findByPk(req.params.HardwareId, {include: {model: File}}).then(hardware_item => {
 		hardware_item.getFiles().then(file_items => {
 			res.status(200).json(file_items);
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
+		});
 	});
 });
 
@@ -570,12 +635,18 @@ router.get('/:HardwareId/files', (req, res) => {
  *               type: object
  *               items:
  *                 $ref: "#/components/schemas/File"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -585,17 +656,22 @@ router.get('/:HardwareId/files', (req, res) => {
 router.post('/:HardwareId/files', fileUpload.single('file'), (req, res) => {
 	Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
 		File.create({
-			mime: req.file.mimetype,
+			description: req.body.description,
 			filename: req.file.originalname,
+			mime: req.file.mimetype,
 			static_filename: req.file.filename,
 			HardwareId: hardware_item.id
 		}).then(file_item => {
 			res.status(200).json(file_item);
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
+		});
 	});
 });
 
@@ -612,13 +688,19 @@ router.post('/:HardwareId/files', fileUpload.single('file'), (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -631,18 +713,21 @@ router.post('/:HardwareId/files', fileUpload.single('file'), (req, res) => {
  */
 router.delete('/:HardwareId/files/:FileId', (req, res) => {
 	Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
-		File.findByPk(req.params.FileId).then((file_item) => {
-			File.destroy({ where: { id: file_item.id, HardwareId: hardware_item.id }}).then(() => {
-				fs.unlinkSync(path.resolve() + '/static/files/' + file_item.static_filename);
-				res.status(200).json({deleted: file_item.id});
-			}).catch(err => {
-				res.status(500).json({error: err});
+		File.destroy({where: {id: file_item.id, HardwareId: hardware_item.id}}).then(file_item => {
+			fs.unlinkSync(path.resolve() + '/static/files/' + file_item.static_filename);
+			res.status(200).json({
+				action: 'deleted',
+				item_id: file_item.id
 			});
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
 		});
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
+		});
 	});
 });
 
@@ -662,12 +747,18 @@ router.delete('/:HardwareId/files/:FileId', (req, res) => {
  *               type: array
  *               items:
  *                 $ref: "#/components/schemas/Software"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -675,14 +766,18 @@ router.delete('/:HardwareId/files/:FileId', (req, res) => {
  *       required: true
  */
 router.get('/:HardwareId/software', (req, res) => {
-  Hardware.findByPk(req.params.HardwareId, {include: {model: Software}}).then(hardware_items => {
-    hardware_items.getSoftware().then(software_items => {
+  Hardware.findByPk(req.params.HardwareId, {include: {model: Software}}).then(hardware_item => {
+    hardware_item.getSoftware().then(software_items => {
       res.status(200).json(software_items);
-    }).catch(err => {
-      res.status(500).json({error: err});
+    }).catch(err_message => {
+      res.status(500).json({
+				message: err_message
+			});
     });
-  }).catch(err => {
-    res.status(500).json({error: err});
+  }).catch(() => {
+    res.status(404).json({
+			message: 'Hardware not found!'
+		});
   });
 });
 
@@ -699,13 +794,19 @@ router.get('/:HardwareId/software', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -717,15 +818,20 @@ router.get('/:HardwareId/software', (req, res) => {
  *       required: true
  */
 router.delete('/:HardwareId/software/:SoftwareId', (req, res) => {
-	Hardware.findByPk(req.params.HardwareId).then((hardware_item) => {
+	Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
 		hardware_item.removeSoftware(req.params.SoftwareId).then(() => {
 			res.status(200).json({
-				'action': 'reject',
-				hardware_id: req.params.HardwareId,
-				software_id: req.params.SoftwareId
+				action: 'rejected',
+				item_id: req.params.SoftwareId
 			});
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
 		});
 	});
 });
@@ -743,13 +849,19 @@ router.delete('/:HardwareId/software/:SoftwareId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *                $ref: "#/components/schemas/Info"
+ *       404:
+ *         description: Error if Software item was not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/Error"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -761,15 +873,20 @@ router.delete('/:HardwareId/software/:SoftwareId', (req, res) => {
  *       required: true
  */
 router.put('/:HardwareId/software/:SoftwareId', (req, res) => {
-	Hardware.findByPk(req.params.HardwareId).then((hardware_item) => {
+	Hardware.findByPk(req.params.HardwareId).then(hardware_item => {
 		hardware_item.addSoftware(req.params.SoftwareId).then(() => {
 			res.status(200).json({
-				action: 'assign',
-				hardware_id: req.params.HardwareId,
-				software_id: req.params.SoftwareId
+				action: 'assigned',
+				item_id: req.params.SoftwareId
 			});
-		}).catch(err => {
-			res.status(500).json({error: err});
+		}).catch(err_message => {
+			res.status(500).json({
+				message: err_message
+			});
+		});
+	}).catch(() => {
+		res.status(404).json({
+			message: 'Hardware not found!'
 		});
 	});
 });
@@ -787,13 +904,13 @@ router.put('/:HardwareId/software/:SoftwareId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               "#/components/schemas/Info"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -801,10 +918,15 @@ router.put('/:HardwareId/software/:SoftwareId', (req, res) => {
  *       required: true
  */
 router.delete('/:HardwareId', (req, res) => {
-  Hardware.destroy({where: {id: req.params.HardwareId}}).then(() => {
-    res.status(200).json({deleted: req.params.HardwareId});
-  }).catch(err => {
-    res.status(500).json({error: err});
+  Hardware.destroy({where: {id: req.params.HardwareId}}).then(hardware_item => {
+    res.status(200).json({
+			action: 'deleted',
+			item_id: hardware_item.id
+		});
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
@@ -821,13 +943,13 @@ router.delete('/:HardwareId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Hardware"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               "#/components/schemas/Error"
  *   parameters:
  *     - name: HardwareId
  *       in: path
@@ -845,11 +967,13 @@ router.put('/:HardwareId', (req, res) => {
 		state: req.body.state,
 		offlineArchive: req.body.offlineArchive
   }, {
-		where: { id: req.params.HardwareId }
-  }).then(() => {
-    res.status(200).json({updated: req.params.HardwareId});
-  }).catch(err => {
-    res.status(500).json({error: err});
+		where: {id: req.params.HardwareId}
+  }).then(hardware_item => {
+    res.status(200).json(hardware_item);
+  }).catch(err_message => {
+    res.status(500).json({
+			message: err_message
+		});
   });
 });
 
@@ -866,13 +990,13 @@ router.put('/:HardwareId', (req, res) => {
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Hardware"
  *       500:
  *         description: A unexpected error on the API.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
+ *               $ref: "#/components/schemas/Error"
  */
 router.post('/', (req, res) => {
   Hardware.create({
@@ -886,8 +1010,10 @@ router.post('/', (req, res) => {
 		offline_archive: req.body.offline_archive
   }).then(hardware_item => {
     res.status(200).json(hardware_item);
-	}).catch(err => {
-		res.status(500).json({error: err});
+	}).catch(err_message => {
+		res.status(500).json({
+			message: err_message
+		});
 	});
 });
 
