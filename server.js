@@ -6,13 +6,14 @@ import https from 'https';
 import fs from 'fs';
 import path from 'path';
 
-import settings from './settings.js';
 import sequelize from './src/sequelize.js';
 
 import authRoutes from './src/routes/auth.js';
 import usersRoutes from './src/routes/users.js';
+import barcodeRoutes from './src/routes/barcodes.js';
 import softwareRoutes from './src/routes/software.js';
 import hardwareRoutes from './src/routes/hardware.js';
+import orderRoutes from './src/routes/orders.js';
 import secureRoutes from './src/routes/secure.js';
 import passport from 'passport';
 
@@ -51,14 +52,12 @@ app.use('/', authRoutes);
 app.use('/users', usersRoutes);
 app.use('/software', softwareRoutes);
 app.use('/hardware', hardwareRoutes);
+app.use('/order', orderRoutes);
+app.use('/barcodes', barcodeRoutes);
 app.use('/users', passport.authenticate('jwt', {session: false}), secureRoutes);
 
 relations();
-sequelize.sync();
-//sequelize.sync({alter: true});
-//sequelize.sync({force: true});
-
-//app.listen(settings.server.port, () => console.log(`Server is running on http://localhost:${settings.server.port}`));
+sequelize.sync({alter: true, force: true});
 
 var key = fs.readFileSync(process.cwd() + '/certs/server.key');
 var cert = fs.readFileSync(process.cwd() + '/certs/server.crt');
