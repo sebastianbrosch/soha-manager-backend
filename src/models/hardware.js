@@ -1,59 +1,41 @@
 import DataTypes from 'sequelize';
 import sequelize from '../sequelize.js';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Hardware:
- *       type: object
- *       required:
- *         - name
- *       properties:
- *         name:
- *           type: string
- *         producer:
- *           type: string
- *         serial_number:
- *           type: string
- *         type:
- *           type: string
- *         purchase_date:
- *           type: string
- *           format: date-time
- *         warranty_date:
- *           type: string
- *           format: date-time
- *         state:
- *           type: string
- *         offline_archive:
- *           type: integer
- *           format: int32
- */
 const Hardware = sequelize.define('Hardware', {
-  name: {
+  description: {
+		allowNull: false,
+		field: 'name',
 		type: DataTypes.STRING
 	},
-	producer: {
+	serialnumber: {
+		allowNull: true,
+		field: 'serialnumber',
 		type: DataTypes.STRING
 	},
-	serial_number: {
-		type: DataTypes.STRING
+	deviceType: {
+		allowNull: true,
+		field: 'device_type',
+		type: DataTypes.ENUM(['Notebook', 'Router', 'Switch', 'Printer', 'Monitor', 'Computer'])
 	},
-	type: {
-		type: DataTypes.STRING
-	},
-	purchase_date: {
+	purchasedAt: {
+		allowNull: true,
+		field: 'purchased_at',
 		type: DataTypes.DATE
 	},
-	warranty_date: {
+	warrantyAt: {
+		allowNull: true,
+		field: 'warranty_at',
 		type: DataTypes.DATE
 	},
 	state: {
+		allowNull: true,
+		field: 'state',
 		type: DataTypes.ENUM(['active', 'inactive', 'spare'])
 	},
-	offline_archive: {
-		type: DataTypes.INTEGER
+	offlineArchive: {
+		allowNull: true,
+		field: 'offline_archive',
+		type: DataTypes.STRING
 	}
 }, {
 	classMethods: {
@@ -66,6 +48,9 @@ const Hardware = sequelize.define('Hardware', {
 			Hardware.belongsToMany(models.Software, { through: 'hardware_software' });
 		}
 	},
+	freezeTableName: true,
+	timestamps: true,
+	underscored: true,
 	tableName: 'hardware'
 });
 

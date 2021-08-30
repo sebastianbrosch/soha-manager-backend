@@ -1,5 +1,5 @@
 import express from 'express';
-import Hardware from '../models/Hardware.js';
+import Hardware from '../models/hardware.js';
 import Comment from '../models/comment.js';
 import Document from '../models/document.js';
 import multer from 'multer';
@@ -958,12 +958,11 @@ router.delete('/:HardwareId', (req, res) => {
  */
 router.put('/:HardwareId', (req, res) => {
 	Hardware.update({
-		name: req.body.name,
-		producer: req.body.producer,
-		serialNumber: req.body.serialNumber,
-		type: req.body.type,
-		purchaseDate: req.body.purchaseDate,
-		warrantyDate: req.body.warrantyDate,
+		description: req.body.description,
+		serialnumber: req.body.serialnumber,
+		deviceType: req.body.deviceType,
+		purchasedAt: req.body.purchasedAt,
+		warrantyAt: req.body.warrantyAt,
 		state: req.body.state,
 		offlineArchive: req.body.offlineArchive
   }, {
@@ -1000,19 +999,18 @@ router.put('/:HardwareId', (req, res) => {
  */
 router.post('/', (req, res) => {
   Hardware.create({
-		name: req.body.name,
-		producer: req.body.producer,
-		serial_number: req.body.serial_number,
-		type: req.body.type,
-		purchase_date: req.body.purchase_date,
-		warranty_date: req.body.warranty_date,
+		description: req.body.description,
+		serialnumber: req.body.serialnumber,
+		deviceType: req.body.deviceType,
+		purchasedAt: req.body.purchasedAt,
+		warrantyAt: req.body.warrantyAt,
 		state: req.body.state,
-		offline_archive: req.body.offline_archive
+		offlineArchive: req.body.offlineArchive
   }).then(hardware_item => {
     res.status(200).json(hardware_item);
 	}).catch(err_message => {
 		res.status(500).json({
-			message: err_message
+			error: err_message
 		});
 	});
 });
