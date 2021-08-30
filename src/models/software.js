@@ -1,60 +1,42 @@
 import DataTypes from 'sequelize';
 import sequelize from '../sequelize.js';
 
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Software:
- *       type: object
- *       required:
- *         - name
- *       properties:
- *         name:
- *           type: string
- *         producer:
- *           type: string
- *         license_id:
- *           type: string
- *         license_key:
- *           type: string
- *         number_license:
- *           type: integer
- *           format: int32
- *         state:
- *           type: string
- *         expiry_date:
- *           type: string
- *           format: date-time
- *         offline_archive:
- *           type: integer
- *           format: int32
- */
 const Software = sequelize.define('Software', {
 	name: {
+		allowNull: false,
+		field: 'name',
 		type: DataTypes.STRING
 	},
-	producer: {
+	licenseKey: {
+		allowNull: true,
+		field: 'license_key',
 		type: DataTypes.STRING
 	},
-	license_id: {
+	licensePassword: {
+		allowNull: true,
+		field: 'license_password',
 		type: DataTypes.STRING
 	},
-	license_key: {
-		type: DataTypes.STRING
-	},
-	number_license: {
+	licenseAmount: {
+		allowNull: true,
+		field: 'license_amount',
 		type: DataTypes.INTEGER
 	},
 	state: {
-		type: DataTypes.ENUM(['active', 'inactive', 'expired'])
+		allowNull: false,
+		defaultValue: 'active',
+		field: 'state',
+		type: DataTypes.ENUM(['active', 'inactive'])
 	},
-	expiry_date: {
+	offlineArchive: {
+		allowNull: true,
+		field: 'offline_archive',
+		type: DataTypes.STRING
+	},
+	expiresAt: {
+		allowNull: true,
+		field: 'expires_at',
 		type: DataTypes.DATE
-	},
-	offline_archive: {
-		type: DataTypes.INTEGER
 	}
 }, {
 	classMethods: {
@@ -67,6 +49,9 @@ const Software = sequelize.define('Software', {
 			Software.belongsToMany(models.Hardware, { through: 'hardware_software' });
 		},
 	},
+	freezeTableName: true,
+	timestamps: true,
+	underscored: true,
 	tableName: 'software'
 });
 

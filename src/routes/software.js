@@ -6,7 +6,7 @@ import multer from 'multer';
 import Hardware from '../models/hardware.js';
 import User from '../models/user.js';
 import Barcode from '../models/barcode.js';
-import fs from 'fs';
+import fs, { stat } from 'fs';
 import path from 'path';
 import File from '../models/file.js';
 
@@ -52,35 +52,66 @@ const fileUpload = multer({storage: fileStorage, limits: {
 const router = express.Router();
 
 
-/**
- * @swagger
- * /software:
- *   get:
- *     description: Returns all Software items.
- *     tags:
- *       - Software
- *     responses:
- *       200:
- *         description: A list of all Software items.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: "#/components/schemas/Software"
- *       500:
- *         description: A unexpected error on the API.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Error"
- */
 router.get('/', (req, res) => {
 	Software.findAll().then(software_items => {
 		res.status(200).json(software_items);
   }).catch(err_message => {
     res.status(500).json({
-			message: err_message
+			error: err_message
+		});
+  });
+});
+
+router.post('/', (req, res) => {
+  Software.create({
+		name: req.body.name,
+		licenseKey: req.body.licenseKey,
+		licensePassword: req.body.licensePassword,
+		licenseAmount: req.body.licenseAmount,
+		state: req.body.state,
+		offlineArchive: req.body.offlineArchive,
+		expiresAt: req.body.expiresAt
+  }).then(software_item => {
+    res.status(200).json(software_item);
+  }).catch(err_message => {
+    res.status(500).json({
+			error: err_message
+		});
+  });
+});
+
+router.put('/:SoftwareId', (req, res) => {
+  Software.update({
+		name: req.body.name,
+		licenseKey: req.body.licenseKey,
+		licensePassword: req.body.licensePassword,
+		licenseAmount: req.body.licenseAmount,
+		state: req.body.state,
+		offlineArchive: req.body.offlineArchive,
+		expiresAt: req.body.expiresAt
+  }, {
+    where: {id: req.params.SoftwareId}
+  }).then(() => {
+    res.status(200).json({
+			success: 'updated',
+			id: req.params.SoftwareId
+		});
+  }).catch(err_message => {
+    res.status(500).json({
+			error: err_message
+		});
+  });
+});
+
+router.delete('/:SoftwareId', (req, res) => {
+  Software.destroy({where: {id: req.params.SoftwareId}}).then(software_item => {
+    res.status(200).json({
+			success: 'deleted',
+			id: req.params.SoftwareId
+		});
+  }).catch(err_message => {
+    res.status(500).json({
+			error: err_message
 		});
   });
 });
@@ -351,6 +382,38 @@ router.post('/:SoftwareId/comments', (req, res) => {
   });
 });
 
+router.put('/:id/users', async (req, res) => {
+	if (req.body.users) {
+		await Software.findByPk(req.params.id).then(async (item) => {
+			item.addUsers(req.body.users).then(() => {
+				res.status(200).json({
+					'added': req.params.users
+				});
+			});
+		}).catch(() => {
+			res.status(404).json({
+				'error': 'Software not found!'
+			});
+		});
+	}
+});
+
+router.delete('/:id/users', async (req, res) => {
+	if (req.body.users) {
+		await Software.findByPk(req.params.id).then(async (item) => {
+			item.removeUsers(req.body.users).then(() => {
+				res.status(200).json({
+					'removed': req.params.users
+				});
+			});
+		}).catch(() => {
+			res.status(404).json({
+				'error': 'Software not found!'
+			});
+		});
+	}
+})
+
 /**
  * @swagger
  * /software/{SoftwareId}/comments/{CommentId}:
@@ -513,7 +576,7 @@ router.post('/:SoftwareId/documents', documentUpload.single('document'), (req, r
 
 /**
  * @swagger
- * /software&{SoftwareId}/documents/{DocumentId}:
+ * /software/{SoftwareId}/documents/{DocumentId}:
  *   delete:
  *     description: Delete a Document item of the Software item.
  *     tags:
@@ -887,130 +950,10 @@ router.put('/:SoftwareId/hardware/:HardwareId', (req, res) => {
 	});
 });
 
-/**
- * @swagger
- * /software/{SoftwareId}:
- *   delete:
- *     description: Delete the Software item with given ID.
- *     tags:
- *       - Software
- *     responses:
- *       200:
- *         description: A object with information of the deletion.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Info"
- *       500:
- *         description: A unexpected error on the API.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Error"
- *   parameters:
- *     - name: SoftwareId
- *       in: path
- *       description: ID of the Software item.
- *       required: true
- */
-router.delete('/:SoftwareId', (req, res) => {
-  Software.destroy({where: {id: req.params.SoftwareId}}).then(software_item => {
-    res.status(200).json({
-			action: 'deleted',
-			item_id: software_item.id
-		});
-  }).catch(err_message => {
-    res.status(500).json({
-			message: err_message
-		});
-  });
-});
 
-/**
- * @swagger
- * /software/{SoftwareId}:
- *   put:
- *     description: Update the Software item with given ID.
- *     tags:
- *       - Software
- *     responses:
- *       200:
- *         description: A object with the updated Software item.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Software"
- *       500:
- *         description: A unexpected error on the API.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Error"
- *   parameters:
- *     - name: SoftwareId
- *       in: path
- *       description: ID of the Software item.
- *       required: true
- */
-router.put('/:SoftwareId', (req, res) => {
-  Software.update({
-		name: req.body.name,
-		producer: req.body.producer,
-		licenseId: req.body.licenseId,
-		licenseKey: req.body.licenseKey,
-		numberLicense: req.body.numberLicense,
-		state: req.body.state,
-		expiryDate: req.body.expiryDate,
-		offlineArchive: req.body.offlineArchive
-  }, {
-    where: {id: req.params.SoftwareId}
-  }).then(software_item => {
-    res.status(200).json(software_item);
-  }).catch(err_message => {
-    res.status(500).json({
-			message: err_message
-		});
-  });
-});
 
-/**
- * @swagger
- * /software
- *   post:
- *     description: Create a new Software item.
- *     tags:
- *       - Software
- *     responses:
- *       200:
- *         description: The successfully created Software item.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Software"
- *       500:
- *         description: A unexpected error on the API.
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/Error"
- */
-router.post('/', (req, res) => {
-  Software.create({
-		name: req.body.name,
-		producer: req.body.producer,
-		licenseId: req.body.licenseId,
-		licenseKey: req.body.licenseKey,
-		numberLicense: req.body.numberLicense,
-		state: req.body.state,
-		expiryDate: req.body.expiryDate,
-		offlineArchive: req.body.offlineArchive
-  }).then(software_item => {
-    res.status(200).json(software_item);
-  }).catch(err_message => {
-    res.status(500).json({
-			message: err_message
-		});
-  });
-});
+
+
+
 
 export default router;
