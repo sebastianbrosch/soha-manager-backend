@@ -2,18 +2,26 @@ import DataTypes from 'sequelize';
 import sequelize from '../sequelize.js';
 
 const Order = sequelize.define('Order', {
-	product_count: {
+	buyCount: {
 		type: DataTypes.INTEGER
 	},
-	product_name: {
+	productName: {
 		type: DataTypes.STRING
 	},
-	product_url: {
+	productUrl: {
 		type: DataTypes.STRING
 	},
-	done_at: {
+	shopName: {
+		type: DataTypes.STRING
+	},
+	doneAt: {
 		type: DataTypes.DATE
 	}
+}, {
+	freezeTableName: true,
+	timestamps: true,
+	underscored: true,
+	tableName: 'orders'
 });
 
 export default Order;

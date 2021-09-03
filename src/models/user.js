@@ -30,6 +30,9 @@ const User = sequelize.define('User', {
 			User.belongsToMany(models.Software, { through: 'user_software' });
 		}
 	},
+	freezeTableName: true,
+	timestamps: true,
+	underscored: true,
 	tableName: 'users'
 });
 

@@ -15,7 +15,7 @@ const Hardware = sequelize.define('Hardware', {
 	deviceType: {
 		allowNull: true,
 		field: 'device_type',
-		type: DataTypes.ENUM(['Notebook', 'Router', 'Switch', 'Printer', 'Monitor', 'Computer'])
+		type: DataTypes.ENUM(['Notebook', 'Router', 'Switch', 'Printer', 'Monitor', 'Computer', 'Hard Disk - External', 'Hard Disk - Internal', 'IP telephone'])
 	},
 	purchasedAt: {
 		allowNull: true,
@@ -30,7 +30,7 @@ const Hardware = sequelize.define('Hardware', {
 	state: {
 		allowNull: true,
 		field: 'state',
-		type: DataTypes.ENUM(['active', 'inactive', 'spare'])
+		type: DataTypes.ENUM(['active', 'inactive', 'spare', 'corrupted'])
 	},
 	offlineArchive: {
 		allowNull: true,

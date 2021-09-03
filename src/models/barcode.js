@@ -1,37 +1,20 @@
 import DataTypes from 'sequelize';
 import sequelize from '../sequelize.js';
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Barcode:
- *       type: object
- *       required:
- *         - code
- *         - format
- *       properties:
- *         code:
- *           type: string
- *         format:
- *           type: string
- *         label:
- *           type: string
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- */
 const Barcode = sequelize.define('Barcode', {
 	code: {
+		allowNull: false,
+		field: 'code',
 		type: DataTypes.STRING
 	},
 	format: {
+		allowNull: false,
+		field: 'format',
 		type: DataTypes.STRING
 	},
-	label: {
+	description: {
+		allowNull: false,
+		field: 'description',
 		type: DataTypes.STRING
 	},
 }, {
@@ -41,6 +24,9 @@ const Barcode = sequelize.define('Barcode', {
 			Barcode.belongsTo(models.Hardware);
 		}
 	},
+	freezeTableName: true,
+	timestamps: true,
+	underscored: true,
 	tableName: 'barcodes'
 });
 

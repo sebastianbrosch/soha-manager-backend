@@ -3,6 +3,8 @@ import sequelize from '../sequelize.js';
 
 const Comment = sequelize.define('Comment', {
 	content: {
+		allowNull: false,
+		field: 'content',
 		type: DataTypes.STRING
 	},
 }, {
@@ -13,6 +15,9 @@ const Comment = sequelize.define('Comment', {
 			Comment.belongsTo(models.User);
 		}
 	},
+	freezeTableName: true,
+	timestamps: true,
+	underscored: true,
 	tableName: 'comments'
 });
 
