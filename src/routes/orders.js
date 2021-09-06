@@ -14,12 +14,23 @@ router.get('/', (req, res) => {
   });
 });
 
+router.get('/:id', (req, res) => {
+	Order.findByPk(req.params.id).then(orderItem => {
+		res.status(200).json(orderItem);
+	}).catch(err_message => {
+		res.status(500).json({
+			message: err_message
+		});
+	});
+});
+
 router.post('/', (req, res) => {
   Order.create({
-		product_count: req.body.productCount,
-		product_name: req.body.productName,
-		product_url: req.body.productUrl,
-		done_at: req.body.doneAt
+		buyCount: req.body.buyCount,
+		productName: req.body.productName,
+		productUrl: req.body.productUrl,
+		shopName: req.body.shopName,
+		doneAt: req.body.doneAt
   }).then(order_item => {
     res.status(200).json(order_item);
   }).catch(err_message => {
@@ -31,10 +42,11 @@ router.post('/', (req, res) => {
 
 router.put('/:id', (req, res) => {
 	Order.update({
-		product_count: req.body.productCount,
-		product_name: req.body.productName,
-		product_url: req.body.productUrl,
-		done_at: req.body.doneAt
+		buyCount: req.body.buyCount,
+		productName: req.body.productName,
+		productUrl: req.body.productUrl,
+		shopName: req.body.shopName,
+		doneAt: req.body.doneAt
 	}, {
     where: {id: req.params.id}
   }).then(order_item => {

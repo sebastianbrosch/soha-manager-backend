@@ -1,5 +1,5 @@
 import express from 'express';
-import Hardware from '../models/Hardware.js';
+import Hardware from '../models/hardware.js';
 import Barcode from '../models/barcode.js';
 
 // init the router
